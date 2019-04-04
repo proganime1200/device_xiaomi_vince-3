@@ -171,6 +171,9 @@ DEVICE_MATRIX_FILE   := $(DEVICE_PATH)/compatibility_matrix.xml
 # Compile libhwui in performance mode
 HWUI_COMPILE_FOR_PERF := true
 
+# IPA
+USE_DEVICE_SPECIFIC_DATA_IPA_CFG_MGR := true
+
 # Vendor init
 TARGET_INIT_VENDOR_LIB := libinit_vince
 TARGET_RECOVERY_DEVICE_MODULES := libinit_vince
