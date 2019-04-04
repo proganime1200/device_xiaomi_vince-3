@@ -1,6 +1,5 @@
 /*
    Copyright (c) 2016, The CyanogenMod Project
-   Copyright (C) 2017-2018 The LineageOS Project.
    Redistribution and use in source and binary forms, with or without
    modification, are permitted provided that the following conditions are
    met:
@@ -27,8 +26,12 @@
  */
 
 #include <fcntl.h>
+#define _REALLY_INCLUDE_SYS__SYSTEM_PROPERTIES_H_
+#include <stdlib.h>
 #include <sys/sysinfo.h>
+#include <sys/_system_properties.h>
 
+#include <android-base/properties.h>
 #include "vendor_init.h"
 #include "property_service.h"
 #include "log.h"
@@ -37,6 +40,37 @@ char const *heapgrowthlimit;
 char const *heapminfree;
 
 using android::init::property_set;
+
+static void init_alarm_boot_properties()
+{
+    int boot_reason;
+    FILE *fp;
+
+    fp = fopen("/proc/sys/kernel/boot_reason", "r");
+    fscanf(fp, "%d", &boot_reason);
+    fclose(fp);
+
+    /*
+     * Setup ro.alarm_boot value to true when it is RTC triggered boot up
+     * For existing PMIC chips, the following mapping applies
+     * for the value of boot_reason:
+     *
+     * 0 -> unknown
+     * 1 -> hard reset
+     * 2 -> sudden momentary power loss (SMPL)
+     * 3 -> real time clock (RTC)
+     * 4 -> DC charger inserted
+     * 5 -> USB charger inserted
+     * 6 -> PON1 pin toggled (for secondary PMICs)
+     * 7 -> CBLPWR_N pin toggled (for external power supply)
+     * 8 -> KPDPWR_N pin toggled (power key pressed)
+     */
+     if (boot_reason == 3) {
+        property_set("ro.alarm_boot", "true");
+     } else {
+        property_set("ro.alarm_boot", "false");
+     }
+}
 
 void check_device()
 {
@@ -55,8 +89,27 @@ void check_device()
    }
 }
 
+void property_override(char const prop[], char const value[])
+{
+    prop_info *pi;
+
+    pi = (prop_info*) __system_property_find(prop);
+    if (pi)
+        __system_property_update(pi, value, strlen(value));
+    else
+        __system_property_add(prop, strlen(prop), value, strlen(value));
+}
+
+void property_override_dual(char const system_prop[], char const vendor_prop[],
+    char const value[])
+{
+    property_override(system_prop, value);
+    property_override(vendor_prop, value);
+}
+
 void vendor_load_properties()
 {
+    init_alarm_boot_properties();
     check_device();
 
     property_set("dalvik.vm.heapstartsize", "16m");
@@ -65,4 +118,13 @@ void vendor_load_properties()
     property_set("dalvik.vm.heaptargetutilization", "0.75");
     property_set("dalvik.vm.heapminfree", heapminfree);
     property_set("dalvik.vm.heapmaxfree", "8m");
+
+	std::string platform = android::base::GetProperty("ro.board.platform", "");
+
+    if (platform != ANDROID_TARGET)
+        return;
+
+    // fingerprint
+    property_override("ro.build.description", "vince-user 8.1.0 OPM1.171019.011 V9.6.18.0.OEJMIFD release-keys");
+    property_override_dual("ro.build.fingerprint", "ro.vendor.build.fingerprint", "google/walleye/walleye:8.1.0/OPM1.171019.011/4448085:user/release-keys");
 }
