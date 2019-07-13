@@ -24,7 +24,6 @@ $(call inherit-product, device/xiaomi/vince/device.mk)
 #all
 IS_GO_VERSION := true
 TARGET_INCLUDE_STOCK_ARCORE := true
-$(call inherit-product, vendor/MiuiCamera/config.mk)
 
 # On for(PE)
 $(call inherit-product, vendor/aosp/config/common_full_phone.mk)
