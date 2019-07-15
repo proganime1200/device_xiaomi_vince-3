@@ -22,7 +22,7 @@ $(call inherit-product, $(SRC_TARGET_DIR)/product/full_base_telephony.mk)
 $(call inherit-product, device/xiaomi/vince/device.mk)
 
 #all
-IS_GO_VERSION := true
+#IS_GO_VERSION := true
 TARGET_INCLUDE_STOCK_ARCORE := true
 
 # On for(PE)
